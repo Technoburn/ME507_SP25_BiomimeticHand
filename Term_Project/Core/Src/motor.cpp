@@ -1,0 +1,195 @@
+/*
+ * motor.cpp
+ *
+ *  Created on: May 27, 2025
+ *      Author: col
+ */
+
+#include "motor.h"
+#include "time.h"
+#include <stdint.h>
+#include <algorithm>
+
+/**
+ * @brief Constructor for Motor object
+ * @param htim_PWM PWM TIM handle
+ * @param PWM_Channel PWM TIM Channel to be enabled
+ *         This parameter can be one of the following values:
+ *           @arg TIM_CHANNEL_1: TIM Channel 1 selected
+ *           @arg TIM_CHANNEL_2: TIM Channel 2 selected
+ *           @arg TIM_CHANNEL_3: TIM Channel 3 selected
+ *           @arg TIM_CHANNEL_4: TIM Channel 4 selected
+ *           @arg TIM_CHANNEL_5: TIM Channel 5 selected
+ *           @arg TIM_CHANNEL_6: TIM Channel 6 selected
+ * @param NSLEEP_GPIO_Port GPIO Port for NSLEEP Pin
+ * @param NSLEEP_Pin GPIO Pin Mask for NSLEEP Pin
+ * @param PH_GPIO_Port GPIO Port for PH Pin
+ * @param PH_Pin GPIO Pin Mask for PH Pin
+ * @param htim_ENC Encoder TIM handle
+ * @param hadc ADC handle
+ * @param ADC_Channel The selected ADC channel
+ * @param hdac DAC handle
+ * @param DAC_Channel The selected DAC channel
+ *         This parameter can be one of the following values:
+ *           @arg DAC_CHANNEL_1: DAC Channel1 selected
+ *           @arg DAC_CHANNEL_2: DAC Channel2 selected
+ */
+Motor::Motor(TIM_HandleTypeDef *htim_PWM
+	        ,uint32_t PWM_Channel
+	        ,GPIO_TypeDef *NSLEEP_GPIO_Port
+	        ,uint16_t NSLEEP_Pin
+	        ,GPIO_TypeDef *PH_GPIO_Port
+	        ,uint16_t PH_Pin
+	        ,TIM_HandleTypeDef *htim_ENC
+	        ,ADC_HandleTypeDef *hadc
+	        ,uint32_t ADC_Channel
+	        ,DAC_HandleTypeDef *hdac
+	        ,uint32_t DAC_Channel)
+
+:_htim_PWM(htim_PWM)
+,_PWM_Channel(PWM_Channel)
+,_NSLEEP_GPIO_Port(NSLEEP_GPIO_Port)
+,_NSLEEP_Pin(NSLEEP_Pin)
+,_PH_GPIO_Port(PH_GPIO_Port)
+,_PH_Pin(PH_Pin)
+,_htim_ENC(htim_ENC)
+,_hadc(hadc)
+,_ADC_Channel(ADC_Channel)
+,_hdac(hdac)
+,_DAC_Channel(DAC_Channel)
+{}
+
+/**
+ * @brief Start motor and associated peripherals
+ */
+void Motor::start(void)
+{
+	disable(); // Disable Motor
+	HAL_TIM_PWM_Start(_htim_PWM,_PWM_Channel); // Start PWM Timer
+	set_effort(0); // Set motor effort to 0
+	HAL_TIM_Encoder_Start(_htim_ENC, TIM_CHANNEL_ALL); // Start Encoder Timer
+	HAL_DAC_Start(_hdac,_DAC_Channel); // Start DAC
+	HAL_DAC_SetValue(_hdac,_DAC_Channel,DAC_ALIGN_12B_R,current_lim); // Set current limit to max
+	HAL_ADCEx_Calibration_Start(_hadc,ADC_SINGLE_ENDED); // Calibrate ADC
+}
+
+/**
+ * @brief Stop motor and associated peripherals
+ */
+void Motor::stop(void)
+{
+	HAL_TIM_PWM_Stop(_htim_PWM,_PWM_Channel); // Stop PWM Timer
+	HAL_TIM_Encoder_Stop(_htim_ENC, TIM_CHANNEL_ALL); // Stop Encoder Timer
+	HAL_DAC_Stop(_hdac,_DAC_Channel); // Stop DAC
+	HAL_ADC_Stop(_hadc); // Stop ADC
+}
+
+/**
+ * @brief Enable the motor
+ */
+void Motor::enable(void)
+{
+	_NSLEEP_GPIO_Port->BSRR = _NSLEEP_Pin; // Set NSLEEP Pin
+}
+
+/**
+ * @brief Disable the motor
+ */
+void Motor::disable(void)
+{
+	_NSLEEP_GPIO_Port->BRR = _NSLEEP_Pin; // Reset NSLEEP Pin
+}
+
+/**
+ * @brief Set motor effort between -100 and 100
+ * @param duty Desired duty cycle of the motor
+ */
+void Motor::set_effort(int32_t duty)
+{
+	effort = std::max(int32_t(-100), std::min(int32_t(100), duty)); // Constrain -100 < effort < 100
+	uint16_t AR = __HAL_TIM_GET_AUTORELOAD(_htim_PWM); // Retrieve AR for PWM
+	int compare = abs((int8_t(effort)*AR)/100); // Convert duty cycle to compare value
+
+	if (effort > 0)
+	{
+		_PH_GPIO_Port->BSRR = _PH_Pin; // Set PH Pin
+	}
+	else
+	{
+		_PH_GPIO_Port->BRR = _PH_Pin; // Reset PH Pin
+	}
+
+	__HAL_TIM_SET_COMPARE(_htim_PWM,_PWM_Channel,compare); // Change compare value
+}
+
+/**
+ * @brief Update encoder count and check for counter reload
+ */
+void Motor::update_enc(void)
+{
+	uint16_t count = (_htim_ENC)->Instance->CNT; // Get the current encoder count
+	_delta = count - _prev_cnt; // Calculate the change in count
+	uint16_t time = micros(); // Get the current time
+	_dt = time_diff(_prev_time,time); // Calculate the change in time
+
+	uint16_t AR = __HAL_TIM_GET_AUTORELOAD(_htim_ENC); // Retrieve AR for ENC
+
+	if (abs(_delta) > (AR + 1)/2) // Account for overflow
+	{
+		if (_delta > 0)
+		{
+			_delta -= (AR + 1);
+		}
+		else
+		{
+			_delta += (AR + 1);
+		}
+	}
+
+	// Update Position and Velocity
+	position += _delta;
+	velocity = (_delta*1000000)/_dt;
+
+	// Update the previous values to be the most recent values
+	_prev_cnt = count;
+	_prev_time = time;
+}
+
+/**
+ * @brief Update encoder and set current position to zero
+ */
+void Motor::set_zero(void)
+{
+	update_enc(); // Update encoder
+	position = 0; // Reset position to 0
+}
+
+/**
+ * @brief Update the current value of the Current-sense ADC
+ */
+void Motor::update_current(void)
+{
+	// Setup ADC Config to read channel
+	ADC_ChannelConfTypeDef sConfig = {0};
+		sConfig.Channel = _ADC_Channel;
+		sConfig.Rank = ADC_REGULAR_RANK_1;
+		sConfig.SingleDiff = ADC_SINGLE_ENDED;
+		sConfig.OffsetNumber = ADC_OFFSET_NONE;
+		sConfig.Offset = 0;
+
+	HAL_ADC_ConfigChannel(_hadc, &sConfig); // Change ADC Config to read channel
+
+	HAL_ADC_Start(_hadc); // Start ADC conversion
+	current = HAL_ADC_GetValue(_hadc); // Get ADC Value
+	HAL_ADC_Stop(_hadc); // Stop ADC Conversion
+}
+
+/**
+ * @brief Set the Current Limit using DAC
+ * @param current Desired current limit as a 12-bit Right-Aligned number
+ */
+void Motor::set_current(uint16_t current)
+{
+	current_lim = std::max(uint16_t(0), std::min(uint16_t(4095), current)); // Constrain 0 < current_lim < 4095
+	HAL_DAC_SetValue(_hdac,_DAC_Channel,DAC_ALIGN_12B_R,current_lim); // Set DAC Value
+}
