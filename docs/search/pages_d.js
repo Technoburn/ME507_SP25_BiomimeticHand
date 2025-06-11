@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['wiring_0',['Wiring',['../index.html#wires',1,'']]]
+  ['tendons_0',['Motors and Tendons',['../index.html#motor',1,'']]]
 ];

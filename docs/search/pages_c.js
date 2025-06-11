@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['tendons_0',['Motors and Tendons',['../index.html#motor',1,'']]]
+  ['soft_20robotic_20hand_0',['Biomimetic Soft Robotic Hand',['../index.html',1,'']]]
 ];

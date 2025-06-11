@@ -9,5 +9,6 @@ var index =
       [ "Microcontrollers", "index.html#mcu", null ],
       [ "Motor Drivers", "index.html#drv", null ],
       [ "Wiring", "index.html#wires", null ]
-    ] ]
+    ] ],
+    [ "Future Improvements", "index.html#improv", null ]
 ];

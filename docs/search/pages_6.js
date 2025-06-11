@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['hand_0',['Biomimetic Soft Robotic Hand',['../index.html',1,'']]]
+  ['future_20improvements_0',['Future Improvements',['../index.html#improv',1,'']]]
 ];

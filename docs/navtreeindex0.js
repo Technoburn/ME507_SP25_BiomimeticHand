@@ -106,6 +106,7 @@ var NAVTREEINDEX0 =
 "index.html":[0],
 "index.html#drv":[0,2,1],
 "index.html#elec_design":[0,2],
+"index.html#improv":[0,3],
 "index.html#intro_sec":[0,0],
 "index.html#mcu":[0,2,0],
 "index.html#mech_design":[0,1],

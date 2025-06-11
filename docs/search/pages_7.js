@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['introduction_0',['Introduction',['../index.html#intro_sec',1,'']]]
+  ['hand_0',['Biomimetic Soft Robotic Hand',['../index.html',1,'']]]
 ];

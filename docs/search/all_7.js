@@ -10,5 +10,6 @@ var searchData=
   ['flx_5fset_7',['FLX_set',['../class_finger___t_a_s_k.html#aa473d76e4617c433833a7f8e69627e48',1,'Finger_TASK']]],
   ['form_8',['form',['../struct_finger___t_a_s_k_1_1motion__t.html#acd2453689e5f48f90cdc6450076797f0',1,'Finger_TASK::motion_t']]],
   ['form_5ft_9',['form_t',['../class_finger___t_a_s_k.html#ab9aca5e5e521fb50471532d08c786774',1,'Finger_TASK']]],
-  ['fsm_10',['FSM',['../class_finger___t_a_s_k.html#a7e90ef368df400e5deb5c6e7fc24558c',1,'Finger_TASK']]]
+  ['fsm_10',['FSM',['../class_finger___t_a_s_k.html#a7e90ef368df400e5deb5c6e7fc24558c',1,'Finger_TASK']]],
+  ['future_20improvements_11',['Future Improvements',['../index.html#improv',1,'']]]
 ];

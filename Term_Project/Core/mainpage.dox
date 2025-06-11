@@ -83,4 +83,13 @@
  *
  * \image html "wiring_harness.png" "Wiring Harnesses" width=50%
  * \image html "wiring_diagram.png" "Wiring Diagram" width=50%
+ * 
+ * \section improv Future Improvements
+ *
+ * There are a few major improvements I would like to make for this project.
+ * Firstly, I'd like to implement communication between the 2 boards allowing for
+ * the motion sequences to be synced together. I'd also like to skrink the board
+ * to be more space efficient. Finally, adding absolute position sensors such
+ * as potentiometers would prevent the need for hardstop homing which can be
+ * inconvenient.
  */
