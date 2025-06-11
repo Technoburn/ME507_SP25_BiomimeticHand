@@ -10,14 +10,14 @@
  * control thus each motor will use an encoder and a current sensor and closed
  *  loop position and impedance control. The user will specify the position of
  *  the thumb and index finger by selecting from a list of preprogrammed poses.
- * 
+ *
  * \htmlonly
  * <iframe width="560" height="315"
- * src="https://youtu.be/vt2h4j3AujM"
+ * src="https://www.youtube.com/embed/vt2h4j3AujM?si=NAmrhE78ryBeVJN2"
  * title="YouTube video player" allowfullscreen>
  * </iframe>
  * \endhtmlonly
- *
+ * 
  * \section mech_design Mechanical Design
  *
  * The mechanical design for this project was largely completed before ME 507 began,
