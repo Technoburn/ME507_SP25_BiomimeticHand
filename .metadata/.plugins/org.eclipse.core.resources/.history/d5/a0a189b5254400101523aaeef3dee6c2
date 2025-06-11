@@ -1,0 +1,59 @@
+/*
+ * controller.cpp
+ *
+ *  Created on: May 29, 2025
+ *      Author: col
+ */
+
+#include "controller.h"
+#include "time.h"
+#include <stdint.h>
+#include <algorithm>
+
+/**
+ * @brief Constructor for Controller object
+ * @param K_P Proportional controller Gain
+ * @param K_F Feed forward controller Gain
+ * @param K_I Integral controller Gain
+ * @param K_D Derivative controller Gain
+ */
+Controller::Controller(float K_P, float K_F, float K_I, float K_D)
+:KP(K_P)
+,KF(K_F)
+,KI(K_I)
+,KD(K_D)
+{}
+
+/**
+ * @brief Run one loop of PID control
+ * @param input PID control input/setpoint
+ * @param feedback PID control feedback/PV
+ * @return Calculated actuation value based on PID
+ */
+int32_t Controller::PID(int32_t input, int32_t feedback)
+{
+	uint16_t time = micros();
+	uint16_t dt = time_diff(_prev_time,time); // Determine the change in time since last loop
+	int32_t error = input - feedback; // Calculate error
+	int32_t delta = feedback - _prev_PV; // Calculate change in PV since last loop
+
+	// Proportional Control
+	int32_t P_power = KP*error;
+
+	// Feed forward Control
+	int32_t F_power = KF*input;
+
+	// Integral Control
+	_sum_err = std::max(int32_t(-2147483640), std::min(int32_t(2147483640)
+			,_sum_err + error*dt)); // Integrate error and constrain it
+	int32_t I_power = KI*_sum_err/1000000;
+
+	// Derivative Control
+	int32_t D_power = KD*(-delta)*1000000/dt;
+
+	// Update previous values
+	_prev_PV = feedback;
+	_prev_time = time;
+
+	return (P_power + F_power + I_power + D_power);
+}

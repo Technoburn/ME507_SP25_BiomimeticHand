@@ -1,0 +1,749 @@
+/*
+ * finger_task.cpp
+ *
+ *  Created on: Jun 4, 2025
+ *      Author: col
+ */
+
+#include "finger_task.h"
+#include <stdlib.h>
+#include <algorithm>
+
+/**
+ * @brief Constructor for Finger_TASK object
+ * @param MOT_XTN Motor used for Extension Tendon
+ * @param XTN_max Maximum position for extension
+ * @param MOT_FLX Motor used for Flexion Tendon
+ * @param FLX3_max Maximum position for flexion 3 bending
+ * @param FLX2_max Maximum position for flexion 2 bending
+ * @param FLX1_max Maximum position for flexion 1 bending
+ * @param MOT_ADD Motor used for Adduction Tendon
+ * @param ADD_max Maximum position for adduction
+ * @param MOT_ABD Motor used for Abduction Tendon
+ * @param ABD_max Maximum position for abduction
+ * @param RLX_max Maximum relax value for Abduction and Adduction
+ * @param K_P Position controller Proportional controller Gain
+ * @param K_F Position controller Feed forward controller Gain
+ * @param K_I Position controller Integral controller Gain
+ * @param K_D Position controller Derivative controller Gain
+ */
+Finger_TASK::Finger_TASK(Motor *MOT_XTN, int32_t XTN_max
+					    ,Motor *MOT_FLX, int32_t FLX3_max, int32_t FLX2_max, int32_t FLX1_max
+					    ,Motor *MOT_ADD, int32_t ADD_max
+					    ,Motor *MOT_ABD, int32_t ABD_max, int32_t RLX_max
+					    ,float K_P, float K_F, float K_I, float K_D)
+:XTN(MOT_XTN)
+,FLX(MOT_FLX)
+,ADD(MOT_ADD)
+,ABD(MOT_ABD)
+,_XTN_max(XTN_max)
+,_FLX3_max(FLX3_max)
+,_FLX2_max(FLX2_max)
+,_FLX1_max(FLX1_max)
+,_ADD_max(ADD_max)
+,_ABD_max(ABD_max)
+,_RLX_max(RLX_max)
+,_XTN_pos(Controller(K_P,K_F,K_I,K_D))
+,_FLX_pos(Controller(K_P,K_F,K_I,K_D))
+,_ADD_pos(Controller(K_P,K_F,K_I,K_D))
+,_ABD_pos(Controller(K_P,K_F,K_I,K_D))
+{}
+
+/**
+ * @brief Run one loop of FSM
+ */
+void Finger_TASK::FSM(void)
+{
+	// Update encoders
+	(*XTN).update_enc();
+	(*FLX).update_enc();
+	(*ADD).update_enc();
+	(*ABD).update_enc();
+
+	static int32_t last_pos; // Last position of encoder of interest
+	static uint32_t stuck_cnt = 0; // Number of times in a row the encoder doesn't change
+
+	// Make sure the ADD & ABD motors relax/home to the maximum possible value
+	static int32_t ADD_home = std::max(_ADD_max,_RLX_max);
+	static int32_t ABD_home = std::max(_ABD_max,_RLX_max);
+
+	static int32_t setpoint = 0;
+	static int32_t ADD_setpoint = 0;
+	static int32_t ABD_setpoint = 0;
+	static form_t prev_form = HUB;
+	static uint32_t start = HAL_GetTick(); // Delay start ticks
+
+	switch(_state)
+	{
+	case(S0_INIT):
+
+		// Start all motors
+		(*XTN).start();
+		(*FLX).start();
+		(*ADD).start();
+		(*ABD).start();
+
+		// Enable all motors
+		(*XTN).enable();
+		(*FLX).enable();
+		(*ADD).enable();
+		(*ABD).enable();
+
+#ifdef THUMB_FINGER
+		XTN_homed = 1;
+#endif
+
+		// Go to next state
+		_state = S4_HUB;
+		break;
+
+	case(S1_RELAX):
+
+		// First home FLX
+		if (FLX_homed == 0)
+		{
+
+#ifdef THUMB_FINGER
+			(*XTN).position = -_RLX_max-_XTN_max;
+#endif
+
+			// Send XTN, ADD, & ABD to relaxed positions
+			(*FLX).set_effort(_FLX_pos.PID(-_RLX_max, (*FLX).position));
+			(*XTN).set_effort(_XTN_pos.PID(-_RLX_max-_XTN_max, (*XTN).position));
+			(*ADD).set_effort(_ADD_pos.PID(-ADD_home, (*ADD).position));
+			(*ABD).set_effort(_ABD_pos.PID(-ABD_home, (*ABD).position));
+
+			// Check if motors have settled
+			if ((abs((*FLX).position - (-_RLX_max)) < SETTLING_TOL)
+			and	(abs((*XTN).position - (-_RLX_max-_XTN_max)) < SETTLING_TOL)
+			and (abs((*ADD).position - (-ADD_home)) < SETTLING_TOL)
+			and (abs((*ABD).position - (-ABD_home)) < SETTLING_TOL))
+			{
+				// Set motor effort to 0
+				(*FLX).set_effort(0);
+				(*XTN).set_effort(0);
+				(*ADD).set_effort(0);
+				(*ABD).set_effort(0);
+				(*FLX).set_zero(); // Zero the encoder
+				last_pos = (*FLX).position;  // Update last position
+				_state = S2_HARDSTOP;
+			}
+		}
+
+		// Second home XTN
+		else if (XTN_homed == 0)
+		{
+
+#ifdef THUMB_FINGER
+			(*XTN).position = -_RLX_max;
+#endif
+
+			// Send FLX, ADD, & ABD to relaxed positions
+			(*FLX).set_effort(_FLX_pos.PID(-_RLX_max, (*FLX).position));
+			(*XTN).set_effort(_XTN_pos.PID(-_RLX_max, (*XTN).position));
+			(*ADD).set_effort(_ADD_pos.PID(-ADD_home, (*ADD).position));
+			(*ABD).set_effort(_ABD_pos.PID(-ABD_home, (*ABD).position));
+
+			// Check if motors have settled
+			if ((abs((*FLX).position - (-_RLX_max)) < SETTLING_TOL)
+			and	(abs((*XTN).position - (-_RLX_max)) < SETTLING_TOL)
+			and (abs((*ADD).position - (-ADD_home)) < SETTLING_TOL)
+			and (abs((*ABD).position - (-ABD_home)) < SETTLING_TOL))
+			{
+				// Set motor effort to 0
+				(*FLX).set_effort(0);
+				(*XTN).set_effort(0);
+				(*ADD).set_effort(0);
+				(*ABD).set_effort(0);
+				(*XTN).set_zero(); // Zero the encoder
+				last_pos = (*XTN).position;  // Update last position
+				_state = S2_HARDSTOP;
+			}
+		}
+
+		// Third home ADD
+		else if (ADD_homed == 0)
+		{
+
+#ifdef THUMB_FINGER
+			(*XTN).position = -_RLX_max;
+#endif
+
+			// Send FLX, XTN, & ABD to relaxed positions
+			(*FLX).set_effort(_FLX_pos.PID(-_RLX_max, (*FLX).position));
+			(*XTN).set_effort(_XTN_pos.PID(-_RLX_max, (*XTN).position));
+			(*ADD).set_effort(_ADD_pos.PID(-ADD_home, (*ADD).position));
+			(*ABD).set_effort(_ABD_pos.PID(-ABD_home, (*ABD).position));
+
+			// Check if motors have settled
+			if ((abs((*FLX).position - (-_RLX_max)) < SETTLING_TOL)
+			and	(abs((*XTN).position - (-_RLX_max)) < SETTLING_TOL)
+			and (abs((*ADD).position - (-ADD_home)) < SETTLING_TOL)
+			and (abs((*ABD).position - (-ABD_home)) < SETTLING_TOL))
+			{
+				// Set motor effort to 0
+				(*FLX).set_effort(0);
+				(*XTN).set_effort(0);
+				(*ADD).set_effort(0);
+				(*ABD).set_effort(0);
+				(*ADD).set_zero(); // Zero the encoder
+				last_pos = (*ADD).position;  // Update last position
+				_state = S2_HARDSTOP;
+			}
+		}
+
+		// Fourth home ABD
+		else if (ABD_homed == 0)
+		{
+
+#ifdef THUMB_FINGER
+			(*XTN).position = -_RLX_max;
+#endif
+
+			// Send FLX, XTN, & ADD to relaxed positions
+			(*FLX).set_effort(_FLX_pos.PID(-_RLX_max, (*FLX).position));
+			(*XTN).set_effort(_XTN_pos.PID(-_RLX_max, (*XTN).position));
+			(*ADD).set_effort(_ADD_pos.PID(-ADD_home, (*ADD).position));
+			(*ABD).set_effort(_ABD_pos.PID(-ABD_home, (*ABD).position));
+
+			// Check if motors have settled
+			if ((abs((*FLX).position - (-_RLX_max)) < SETTLING_TOL)
+			and	(abs((*XTN).position - (-_RLX_max)) < SETTLING_TOL)
+			and (abs((*ADD).position - (-ADD_home)) < SETTLING_TOL)
+			and (abs((*ABD).position - (-ABD_home)) < SETTLING_TOL))
+			{
+				// Set motor effort to 0
+				(*FLX).set_effort(0);
+				(*XTN).set_effort(0);
+				(*ADD).set_effort(0);
+				(*ABD).set_effort(0);
+				(*ABD).set_zero(); // Zero the encoder
+				last_pos = (*ABD).position;  // Update last position
+				_state = S2_HARDSTOP;
+			}
+		}
+		break;
+
+	case(S2_HARDSTOP):
+
+		// First home FLX
+		if (FLX_homed == 0)
+		{
+			(*FLX).set_effort((_FLX3_max*100)/abs(_FLX3_max)); // Move MOT towards hardstop
+
+			// Check if the motor has gotten past the transient response
+			if ((*FLX).position > 0.8*_RLX_max)
+			{
+				(*FLX).set_current(CURRENT_LIM); // Set MOT current limit
+
+				// Check if the position is still changing
+				if ((*FLX).position == last_pos)
+				{
+					stuck_cnt++;
+
+					// Check if its been stuck many times in a row
+					if (stuck_cnt > 300)
+					{
+						stuck_cnt = 0; // Reset stuck count
+						(*FLX).set_effort(0); // Stop motor moving
+						(*FLX).set_zero(); // Zero the encoder
+						_state = S3_HOME;
+					}
+				}
+				else
+				{
+					stuck_cnt = 0; // Reset stuck count
+				}
+			}
+
+			last_pos = (*FLX).position;  // Update last position
+		}
+
+		// Second home XTN
+		else if (XTN_homed == 0)
+		{
+
+			(*XTN).set_effort((_XTN_max*100)/abs(_XTN_max)); // Move MOT towards hardstop
+
+#ifdef THUMB_FINGER
+			(*XTN).position = _RLX_max;
+			(*XTN).set_effort(0);
+#endif
+
+			// Check if the motor has gotten past the transient response
+			if (abs((*XTN).position) > 0.8*_RLX_max)
+			{
+				(*XTN).set_current(CURRENT_LIM); // Set MOT current limit
+
+				// Check if the position is still changing
+				if ((*XTN).position == last_pos)
+				{
+					stuck_cnt++;
+
+					// Check if its been stuck many times in a row
+					if (stuck_cnt > 300)
+					{
+						stuck_cnt = 0; // Reset stuck count
+						(*XTN).set_effort(0); // Stop motor moving
+						(*XTN).set_zero(); // Zero the encoder
+						_state = S3_HOME;
+					}
+				}
+				else
+				{
+					stuck_cnt = 0; // Reset stuck count
+				}
+			}
+			last_pos = (*XTN).position;  // Update last position
+		}
+
+		// Third home ADD
+		else if (ADD_homed == 0)
+		{
+			(*ADD).set_effort((_ADD_max*100)/abs(_ADD_max)); // Move MOT towards hardstop
+
+			// Check if the motor has gotten past the transient response
+			if (abs((*ADD).position) > 0.8*ADD_home)
+			{
+				(*ADD).set_current(CURRENT_LIM); // Set MOT current limit
+
+				// Check if the position is still changing
+				if ((*ADD).position == last_pos)
+				{
+					stuck_cnt++;
+
+					// Check if its been stuck many times in a row
+					if (stuck_cnt > 300)
+					{
+						stuck_cnt = 0; // Reset stuck count
+						(*ADD).set_effort(0); // Stop motor moving
+						(*ADD).set_zero(); // Zero the encoder
+						_state = S3_HOME;
+					}
+				}
+				else
+				{
+					stuck_cnt = 0; // Reset stuck count
+				}
+			}
+
+			last_pos = (*ADD).position; // Update last position
+		}
+
+		// Fourth home ABD
+		else if (ABD_homed == 0)
+		{
+			(*ABD).set_effort((_ABD_max*100)/abs(_ABD_max)); // Move MOT towards hardstop
+
+			// Check if the motor has gotten past the transient response
+			if (abs((*ABD).position) > 0.8*ABD_home)
+			{
+				(*ABD).set_current(CURRENT_LIM); // Set MOT current limit
+
+				// Check if the position is still changing
+				if ((*ABD).position == last_pos)
+				{
+					stuck_cnt++;
+
+					// Check if its been stuck many times in a row
+					if (stuck_cnt > 300)
+					{
+						stuck_cnt = 0; // Reset stuck count
+						(*ABD).set_effort(0); // Stop motor moving
+						(*ABD).set_zero(); // Zero the encoder
+						_state = S3_HOME;
+					}
+				}
+				else
+				{
+					stuck_cnt = 0; // Reset stuck count
+				}
+			}
+
+			last_pos = (*ABD).position;  // Update last position
+		}
+		break;
+
+	case(S3_HOME):
+
+		// First home FLX
+		if (FLX_homed == 0)
+		{
+			(*FLX).set_current(4095); // Remove current limit for motor
+			(*FLX).set_effort(_FLX_pos.PID(-_FLX3_max, (*FLX).position)); // Send FLX to home position
+
+			// Check if FLX settled
+			if (abs((*FLX).position - (-_FLX3_max)) < SETTLING_TOL)
+			{
+				(*FLX).set_effort(0); // Stop motor moving
+				(*FLX).set_zero(); // Zero the encoder
+				FLX_homed = 1; // Mark FLX as homed
+
+				// Check if all motors homed
+				if ((FLX_homed == 1)
+				and (XTN_homed == 1)
+				and (ADD_homed == 1)
+				and (ABD_homed == 1))
+				{
+					// Send to zero
+					FLX_set = 0;
+					ADD_set = 0;
+					ABD_set = 0;
+					// Clear the list of commands
+					motion_index = 0;
+					motion_cnt = 0;
+					XTN_set = 0;
+					FLX_set = 0;
+					ADD_set = 0;
+					ABD_set = 0;
+					_state = S4_HUB;
+					//_state = S5_FLX3;
+				}
+				else
+				{
+					_state = S1_RELAX;
+				}
+			}
+		}
+
+		// Second home XTN
+		else if (XTN_homed == 0)
+		{
+
+#ifdef THUMB_FINGER
+			(*XTN).position = -_XTN_max;
+#endif
+
+			(*XTN).set_current(4095); // Remove current limit for motor
+			(*XTN).set_effort(_XTN_pos.PID(-_XTN_max, (*XTN).position)); // Send XTN to home position
+
+			// Check if XTN settled
+			if (abs((*XTN).position - (-_XTN_max)) < SETTLING_TOL)
+			{
+				(*XTN).set_effort(0); // Stop motor moving
+				(*XTN).set_zero(); // Zero the encoder
+				XTN_homed = 1; // Mark XTN as homed
+
+				// Check if all motors homed
+				if ((FLX_homed == 1)
+				and (XTN_homed == 1)
+				and (ADD_homed == 1)
+				and (ABD_homed == 1))
+				{
+					// Send to zero
+					FLX_set = 0;
+					ADD_set = 0;
+					ABD_set = 0;
+					// Clear the list of commands
+					motion_index = 0;
+					motion_cnt = 0;
+					XTN_set = 0;
+					FLX_set = 0;
+					ADD_set = 0;
+					ABD_set = 0;
+					_state = S4_HUB;
+					//_state = S5_FLX3;
+				}
+				else
+				{
+					_state = S1_RELAX;
+				}
+			}
+		}
+
+		// Third home ADD
+		else if (ADD_homed == 0)
+		{
+
+			(*ADD).set_current(4095); // Remove current limit for motor
+			(*ADD).set_effort(_ADD_pos.PID(-ADD_home, (*ADD).position)); // Send ADD to home position
+
+			// Check if ADD settled
+			if (abs((*ADD).position - (-ADD_home)) < SETTLING_TOL)
+			{
+				(*ADD).set_effort(0); // Stop motor moving
+				(*ADD).set_zero(); // Zero the encoder
+				ADD_homed = 1; // Mark ADD as homed
+
+				// Check if all motors homed
+				if ((FLX_homed == 1)
+				and (XTN_homed == 1)
+				and (ADD_homed == 1)
+				and (ABD_homed == 1))
+				{
+					// Send to zero
+					FLX_set = 0;
+					ADD_set = 0;
+					ABD_set = 0;
+					// Clear the list of commands
+					motion_index = 0;
+					motion_cnt = 0;
+					XTN_set = 0;
+					FLX_set = 0;
+					ADD_set = 0;
+					ABD_set = 0;
+					_state = S4_HUB;
+					//_state = S5_FLX3;
+				}
+				else
+				{
+					_state = S1_RELAX;
+				}
+			}
+
+		}
+
+		// Fourth home ABD
+		else if (ABD_homed == 0)
+		{
+
+			(*ABD).set_current(4095); // Remove current limit for motor
+			(*ABD).set_effort(_ABD_pos.PID(-ABD_home, (*ABD).position)); // Send ABD to home position
+
+			// Check if ABD settled
+			if (abs((*ABD).position - (-ABD_home)) < SETTLING_TOL)
+			{
+				(*ABD).set_effort(0); // Stop motor moving
+				(*ABD).set_zero(); // Zero the encoder
+				ABD_homed = 1; // Mark ADD as homed
+
+				// Check if all motors homed
+				if ((FLX_homed == 1)
+				and (XTN_homed == 1)
+				and (ADD_homed == 1)
+				and (ABD_homed == 1))
+				{
+					// Send to zero
+					FLX_set = 0;
+					ADD_set = 0;
+					ABD_set = 0;
+					// Clear the list of commands
+					motion_index = 0;
+					motion_cnt = 0;
+					XTN_set = 0;
+					FLX_set = 0;
+					ADD_set = 0;
+					ABD_set = 0;
+					_state = S4_HUB;
+					//_state = S5_FLX3;
+				}
+				else
+				{
+					_state = S1_RELAX;
+				}
+			}
+		}
+		break;
+
+	case(S4_HUB):
+
+		/*
+		(*XTN).set_effort(0);
+		(*FLX).set_effort(0);
+		(*ADD).set_effort(0);
+		(*ABD).set_effort(0);
+		*/
+
+		if ((motion_index >= 0) and (motion_index < motion_cnt))
+		{
+			if ((HAL_GetTick() - start) >= motion_delay)
+			{
+				// Check if joints have settled
+				if ((abs((*XTN).position - XTN_set) < SETTLING_TOL)
+				and	(abs((*FLX).position - FLX_set) < SETTLING_TOL)
+				and (abs((*ADD).position - ADD_set) < SETTLING_TOL)
+				and (abs((*ABD).position - ABD_set) < SETTLING_TOL))
+				{
+					motion_index++;
+					setpoint = motion_list[motion_index].setpoint;
+					start = HAL_GetTick();
+				}
+			}
+		}
+
+		switch(motion_list[motion_index].form)
+{
+
+		case(HOME):
+			// Set all homed flags to false
+			FLX_homed = 0;
+			XTN_homed = 0;
+			ADD_homed = 0;
+			ABD_homed = 0;
+			_state = S1_RELAX;
+			break;
+		case(HUB):
+			motion_index = 0;
+			start = HAL_GetTick() - motion_delay;
+			break;
+		case(FLX3):
+			XTN_set = (-(setpoint*_XTN_max)-(setpoint*_RLX_max))/100;
+			FLX_set = (setpoint*_FLX3_max)/100;
+			ADD_set = ((ADD_setpoint*_ADD_max)-(setpoint*_RLX_max))/100;
+			ABD_set = ((ABD_setpoint*_ABD_max)-(setpoint*_RLX_max))/100;
+			prev_form = FLX3;
+			//FLX_set = motion_list[motion_index].setpoint;
+			break;
+		case(FLX2):
+			XTN_set = -(setpoint*_XTN_max)/100;
+			FLX_set = (setpoint*_FLX2_max)/100;
+			ADD_set = (ADD_setpoint*_ADD_max)/100;
+			ABD_set = (ABD_setpoint*_ABD_max)/100;
+			prev_form = FLX2;
+			//FLX_set = motion_list[motion_index].setpoint;
+			break;
+		case(FLX1):
+			XTN_set = 0;
+			FLX_set = (setpoint*_FLX1_max)/100;
+			ADD_set = ((ADD_setpoint*_ADD_max)-(setpoint*_RLX_max))/100;
+			ABD_set = ((ABD_setpoint*_ABD_max)-(setpoint*_RLX_max))/100;
+			prev_form = FLX1;
+			//FLX_set = motion_list[motion_index].setpoint;
+			break;
+		case(ADDN):
+			ADD_setpoint =  motion_list[motion_index].setpoint;
+			ABD_setpoint = -motion_list[motion_index].setpoint;
+			ADD_set = ((ADD_setpoint*_ADD_max)-(setpoint*_RLX_max))/100;
+			ABD_set = ((ABD_setpoint*_ABD_max)-(setpoint*_RLX_max))/100;;
+			break;
+		case(ABDN):
+			ADD_setpoint = -motion_list[motion_index].setpoint;
+			ABD_setpoint =  motion_list[motion_index].setpoint;
+
+			if (motion_list[motion_index-1].form == FLX2)
+			{
+				ADD_set = (ADD_setpoint*_ADD_max)/100;
+				ABD_set = (ABD_setpoint*_ABD_max)/100;
+			}
+			else
+			{
+				ADD_set = ((ADD_setpoint*_ADD_max)-(setpoint*_RLX_max))/100;
+				ABD_set = ((ABD_setpoint*_ABD_max)-(setpoint*_RLX_max))/100;
+			}
+			break;
+		}
+		#ifdef THUMB_FINGER
+					(*XTN).position = XTN_set;
+		#endif
+
+		(*XTN).set_effort(_XTN_pos.PID(XTN_set,(*XTN).position));
+		(*FLX).set_effort(_FLX_pos.PID(FLX_set,(*FLX).position));
+		(*ADD).set_effort(_ADD_pos.PID(ADD_set,(*ADD).position));
+		(*ABD).set_effort(_ABD_pos.PID(ABD_set,(*ABD).position));
+
+		//_state = state_t(motion_list[motion_index].form);
+		break;
+
+	/*
+	case(S5_FLX3):
+
+#ifdef THUMB_FINGER
+			(*XTN).position = (-(FLX_set*_XTN_max)-(FLX_set*_RLX_max))/100;
+#endif
+
+		// Check if joints have settled
+		if ((abs((*XTN).position - ((-(FLX_set*_XTN_max)-(FLX_set*_RLX_max))/100)) < SETTLING_TOL)
+		and	(abs((*FLX).position - ((FLX_set*_FLX3_max)/100)) < SETTLING_TOL)
+		and (abs((*ADD).position - (((ADD_set*_ADD_max)-(FLX_set*_RLX_max))/100)) < SETTLING_TOL)
+		and (abs((*ABD).position - (((ABD_set*_ABD_max)-(FLX_set*_RLX_max))/100)) < SETTLING_TOL))
+		{
+			_state = S4_HUB;
+		}
+		else
+		{
+			// Flexion 3 (bend all joints equally)
+			(*XTN).set_effort(_XTN_pos.PID((-(FLX_set*_XTN_max)-(FLX_set*_RLX_max))/100, (*XTN).position));
+			(*FLX).set_effort(_FLX_pos.PID((FLX_set*_FLX3_max)/100, (*FLX).position));
+			(*ADD).set_effort(_ADD_pos.PID(((ADD_set*_ADD_max)-(FLX_set*_RLX_max))/100, (*ADD).position));
+			(*ABD).set_effort(_ABD_pos.PID(((ABD_set*_ABD_max)-(FLX_set*_RLX_max))/100, (*ABD).position));
+		}
+		break;
+
+	case(S6_FLX2):
+
+#ifdef THUMB_FINGER
+			(*XTN).position = -(FLX_set*_XTN_max)/100;
+#endif
+
+		// Check if joints have settled
+		if ((abs((*XTN).position - (-(FLX_set*_XTN_max)/100)) < SETTLING_TOL)
+		and	(abs((*FLX).position - ((FLX_set*_FLX2_max)/100)) < SETTLING_TOL)
+		and (abs((*ADD).position - ((ADD_set*_ADD_max)/100)) < SETTLING_TOL)
+		and (abs((*ABD).position - ((ABD_set*_ABD_max)/100)) < SETTLING_TOL))
+		{
+			_state = S4_HUB;
+		}
+		else
+		{
+			// Flexion 2 (only bend top 2 joints)
+			(*XTN).set_effort(_XTN_pos.PID(-(FLX_set*_XTN_max)/100, (*XTN).position));
+			(*FLX).set_effort(_FLX_pos.PID((FLX_set*_FLX2_max)/100, (*FLX).position));
+			(*ADD).set_effort(_ADD_pos.PID((ADD_set*_ADD_max)/100, (*ADD).position));
+			(*ABD).set_effort(_ABD_pos.PID((ABD_set*_ABD_max)/100, (*ABD).position));
+		}
+		break;
+
+	case(S7_FLX1):
+
+#ifdef THUMB_FINGER
+			(*XTN).position = 0;
+#endif
+
+		// Check if joints have settled
+		if ((abs((*XTN).position - (0)) < SETTLING_TOL)
+		and	(abs((*FLX).position - ((FLX_set*_FLX1_max)/100)) < SETTLING_TOL)
+		and (abs((*ADD).position - (((ADD_set*_ADD_max)-(FLX_set*_RLX_max))/100)) < SETTLING_TOL)
+		and (abs((*ABD).position - (((ABD_set*_ABD_max)-(FLX_set*_RLX_max))/100)) < SETTLING_TOL))
+		{
+			_state = S4_HUB;
+		}
+		else
+		{
+		// Flexion 1 (only bend lowest joint)
+			(*XTN).set_effort(_XTN_pos.PID(0, (*XTN).position));
+			(*FLX).set_effort(_FLX_pos.PID((FLX_set*_FLX1_max)/100, (*FLX).position));
+			(*ADD).set_effort(_ADD_pos.PID(((ADD_set*_ADD_max)-(FLX_set*_RLX_max))/100, (*ADD).position));
+			(*ABD).set_effort(_ABD_pos.PID(((ABD_set*_ABD_max)-(FLX_set*_RLX_max))/100, (*ABD).position));
+		}
+		break;
+
+	case(S8_ADD):
+		// Check if joints have settled
+		if ((abs((*XTN).position - (*XTN).position) < SETTLING_TOL)
+		and	(abs((*FLX).position - (*FLX).position) < SETTLING_TOL)
+		and (abs((*ADD).position - (((ADD_set*_ADD_max)-(FLX_set*_RLX_max))/100)) < SETTLING_TOL)
+		and (abs((*ABD).position - (((ABD_set*_ABD_max)-(FLX_set*_RLX_max))/100)) < SETTLING_TOL))
+		{
+			_state = S4_HUB;
+		}
+		else
+		{
+			// Adduction only
+			(*XTN).set_effort(_XTN_pos.PID((*XTN).position, (*XTN).position));
+			(*FLX).set_effort(_FLX_pos.PID((*FLX).position, (*FLX).position));
+			(*ADD).set_effort(_ADD_pos.PID(((ADD_set*_ADD_max)-(FLX_set*_RLX_max))/100, (*ADD).position));
+			(*ABD).set_effort(_ABD_pos.PID(((ABD_set*_ABD_max)-(FLX_set*_RLX_max))/100, (*ABD).position));
+		}
+		break;
+
+	case(S9_ABD):
+		// Check if joints have settled
+		if ((abs((*XTN).position - (*XTN).position) < SETTLING_TOL)
+		and	(abs((*FLX).position - (*FLX).position) < SETTLING_TOL)
+		and (abs((*ADD).position - (((ADD_set*_ADD_max)-(FLX_set*_RLX_max))/100)) < SETTLING_TOL)
+		and (abs((*ABD).position - (((ABD_set*_ABD_max)-(FLX_set*_RLX_max))/100)) < SETTLING_TOL))
+		{
+			_state = S4_HUB;
+		}
+		else
+		{
+			// Adduction only
+			(*XTN).set_effort(_XTN_pos.PID((*XTN).position, (*XTN).position));
+			(*FLX).set_effort(_FLX_pos.PID((*FLX).position, (*FLX).position));
+			(*ADD).set_effort(_ADD_pos.PID(((ADD_set*_ADD_max)-(FLX_set*_RLX_max))/100, (*ADD).position));
+			(*ABD).set_effort(_ABD_pos.PID(((ABD_set*_ABD_max)-(FLX_set*_RLX_max))/100, (*ABD).position));
+		}
+		break;
+	*/
+	}
+}

@@ -1,0 +1,35 @@
+16:19:59 **** Incremental Build of configuration INDEX for project Term_Project ****
+make -j8 all 
+arm-none-eabi-g++ "../Core/Src/finger_task.cpp" -mcpu=cortex-m4 -std=gnu++14 -g3 -DDEBUG -DINDEX_FINGER -DUSE_HAL_DRIVER -DSTM32G473xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -fno-exceptions -fno-rtti -fno-use-cxa-atexit -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/finger_task.d" -MT"Core/Src/finger_task.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/finger_task.o"
+arm-none-eabi-g++ -o "Term_Project.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\colin\Desktop\College\CalPoly\2024-2025\SP25\ME 507\Development\Term_Project\STM32G473RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Term_Project.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+Finished building target: Term_Project.elf
+ 
+arm-none-eabi-size  Term_Project.elf 
+arm-none-eabi-objdump -h -S Term_Project.elf  > "Term_Project.list"
+   text	   data	    bss	    dec	    hex	filename
+  55532	     96	   3976	  59604	   e8d4	Term_Project.elf
+Finished building: default.size.stdout
+ 
+Finished building: Term_Project.list
+ 
+16:20:07 **** Incremental Build of configuration INDEX for project Term_Project ****
+make -j8 all 
+arm-none-eabi-size  Term_Project.elf 
+   text	   data	    bss	    dec	    hex	filename
+  55532	     96	   3976	  59604	   e8d4	Term_Project.elf
+Finished building: default.size.stdout
+ 
+16:20:28 **** Incremental Build of configuration INDEX for project Term_Project ****
+make -j8 all 
+arm-none-eabi-g++ "../Core/Src/finger_task.cpp" -mcpu=cortex-m4 -std=gnu++14 -g3 -DDEBUG -DINDEX_FINGER -DUSE_HAL_DRIVER -DSTM32G473xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -fno-exceptions -fno-rtti -fno-use-cxa-atexit -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/finger_task.d" -MT"Core/Src/finger_task.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/finger_task.o"
+arm-none-eabi-g++ -o "Term_Project.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\colin\Desktop\College\CalPoly\2024-2025\SP25\ME 507\Development\Term_Project\STM32G473RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Term_Project.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+Finished building target: Term_Project.elf
+ 
+arm-none-eabi-size  Term_Project.elf 
+arm-none-eabi-objdump -h -S Term_Project.elf  > "Term_Project.list"
+   text	   data	    bss	    dec	    hex	filename
+  55532	     96	   3976	  59604	   e8d4	Term_Project.elf
+Finished building: default.size.stdout
+ 
+Finished building: Term_Project.list
+ 

@@ -1,0 +1,117 @@
+/*
+ * finger_task.h
+ *
+ *  Created on: Jun 4, 2025
+ *      Author: col
+ */
+
+#ifndef INC_FINGER_TASK_H_
+#define INC_FINGER_TASK_H_
+
+#include <stdint.h>
+#include "motor.h"
+#include "controller.h"
+
+/**
+ * @brief Number of encoder ticks for the motion
+ * to be considered settled
+ */
+#define SETTLING_TOL 50
+/**
+ * @brief Current limit to prevent bending the TPU at hardstop
+ */
+#define	CURRENT_LIM 800
+
+/**
+ * @brief Class for implementing the Finger TASK finite state machine
+ */
+class Finger_TASK
+{
+public:
+
+	/**
+	 * @brief Enumerated type for the forms of movement of the finger (matches state numbers)
+	 */
+	typedef enum
+	{
+		HOME = 1, /**< @brief Home Joints*/
+		FLX3 = 5, /**< @brief Flexion 3 (bend all joints equally) */
+		FLX2 = 6, /**< @brief Flexion 2 (only bend top 2 joints)*/
+		FLX1 = 7, /**< @brief Flexion 1 (only bend lowest joint)*/
+		ADDN = 8, /**< @brief Adduction only*/
+		ABDN = 9, /**< @brief Abduction only*/
+		END  = 4  /**< @brief Do nothing*/
+	}form_t;
+
+	/**
+	 * @brief Custom data type for defining a motion as a form of movement and setpoint
+	 */
+	typedef struct
+	{
+		form_t  form;     /**< @brief The form of motion desired*/
+		int32_t setpoint; /**< @brief The setpoint for the motion between 0-100%*/
+	}motion_t;
+
+	Motor* XTN; /**< @brief Motor used for Extension Tendon */
+	Motor* FLX; /**< @brief Motor used for Flexion Tendon */
+	Motor* ADD; /**< @brief Motor used for Adduction Tendon */
+	Motor* ABD; /**< @brief Motor used for Abduction Tendon */
+
+	bool XTN_homed = 0; /**< @brief Flag denoting if XTN has been homed*/
+	bool FLX_homed = 0; /**< @brief Flag denoting if FLX has been homed*/
+	bool ADD_homed = 0; /**< @brief Flag denoting if ADD has been homed*/
+	bool ABD_homed = 0; /**< @brief Flag denoting if ABD has been homed*/
+
+	form_t  FORM_set = END; /**< @brief Commanded form of motion */
+
+	int32_t FLX3_set = 0; /**< @brief Setpoint for FLX3 */
+	int32_t FLX2_set = 0; /**< @brief Setpoint for FLX2 */
+	int32_t FLX1_set = 0; /**< @brief Setpoint for FLX1 */
+	int32_t ADD_set  = 0; /**< @brief Setpoint for ADD */
+	int32_t ABD_set  = 0; /**< @brief Setpoint for ABD */
+
+	// Constructor for Finger_TASK object
+	Finger_TASK(Motor *MOT_XTN, int32_t XTN_max
+			   ,Motor *MOT_FLX, int32_t FLX3_max, int32_t FLX2_max, int32_t FLX1_max
+			   ,Motor *MOT_ADD, int32_t ADD_max
+			   ,Motor *MOT_ABD, int32_t ABD_max, int32_t RLX_max
+			   ,float K_P, float K_F, float K_I, float K_D);
+
+	void FSM(void); // Run one loop of FSM
+
+private:
+
+	/**
+	 * @brief Enumerated type for the state of the FSM
+	 */
+	typedef enum
+	{
+		S0_INIT,     /**< @brief Initialization*/
+		S1_RELAX,    /**< @brief Relax motors that are not being homed */
+		S2_HARDSTOP, /**< @brief Run homing motor until it is unable to move further */
+		S3_HOME,     /**< @brief Return motor to homed position relative to hardstop*/
+		S4_HUB,      /**< @brief Hub for motion commands*/
+		S5_FLX3,     /**< @brief Flexion 3 (bend all joints equally) */
+		S6_FLX2,     /**< @brief Flexion 2 (only bend top 2 joints)*/
+		S7_FLX1,     /**< @brief Flexion 1 (only bend lowest joint)*/
+		S8_ADD,      /**< @brief Adduction only*/
+		S9_ABD,      /**< @brief Abduction only*/
+	}state_t;
+
+	int32_t _XTN_max;  /**< @brief Maximum position for extension */
+	int32_t _FLX3_max; /**< @brief Maximum position for flexion 3 bending */
+	int32_t _FLX2_max; /**< @brief Maximum position for flexion 2 bending */
+	int32_t _FLX1_max; /**< @brief Maximum position for flexion 1 bending */
+	int32_t _ADD_max;  /**< @brief Maximum position for adduction */
+	int32_t _ABD_max;  /**< @brief Maximum position for abduction */
+	int32_t _RLX_max;  /**< @brief Maximum relax value for Abduction and Adduction */
+
+	Controller _XTN_pos; /**< @brief Controller for extension position */
+	Controller _FLX_pos; /**< @brief Controller for flexion position */
+	Controller _ADD_pos; /**< @brief Controller for adduction position */
+	Controller _ABD_pos; /**< @brief Controller for abduction position */
+
+	state_t _state = S0_INIT; /**< @brief FSM State */
+};
+
+#endif /* INC_FINGER_TASK_H_ */

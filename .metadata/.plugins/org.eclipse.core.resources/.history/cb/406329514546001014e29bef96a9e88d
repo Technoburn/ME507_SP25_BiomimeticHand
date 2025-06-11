@@ -1,0 +1,32 @@
+/*! \mainpage Biomimetic Soft Robotic Hand
+ *
+ * \section intro_sec Introduction
+ *
+ * The goal of this project is to create a soft robotic hand that mechanically
+ * mimics a human hand as closely as possible and can actuate the thumb and 
+ * pointer finger. The pointer finger and thumb will each require 4 motors to 
+ * actuate the 4 tendons per finger and each motor will require its own motor 
+ * driver. To control the fingers each tendon requires position and tension 
+ * control thus each motor will use an encoder and a current sensor and closed
+ *  loop position and impedance control. The user will specify the position of
+ *  the thumb and index finger by selecting from a list of preprogrammed poses.
+ *
+ * \section mech_design Mechanical Design
+ *
+ * \image html "Biomimetic Hand Assembly Drawing.png" "Assembly Drawing" width=5cm
+ *
+ * \subsection prints 3D Printed Components
+ *
+ * The mechanical design of the hand itself was completed prior to ME 507,
+ * however the base was designed for ME 507. All of the components are 3D printed
+ * to allow for rapid prototyping. The hand itself is printed out of 85A TPU
+ * filament. The base and motor spools are printed out of standard PLA. 
+ *
+ * \subsection motor Motors and Tendons
+ *
+ * The tendons for each finger are made of high-strength braided fishing line
+ * strung through channels printed into the hand. These tendons are spooled in and
+ * out by N20 Gear Motors with a 298:1 Gear Ratio and an encoder. Each motor is
+ * individually controlled allowing for multiple motors to be used in tandem to 
+ * mimic the differential tension used to actuate a human hand.
+ */

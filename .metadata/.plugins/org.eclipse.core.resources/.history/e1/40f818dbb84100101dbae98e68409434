@@ -1,0 +1,198 @@
+/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * @file           : main.h
+  * @brief          : Header for main.c file.
+  *                   This file contains the common defines of the application.
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2025 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
+
+/**
+ * @fn void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim)
+ * @brief auto-generated HAL function
+ * @param htim TIM Handle
+ *
+ * @def NFAULT_3_Pin
+ * @brief GPIO Pin corresponding to NFAULT_3
+ *
+ * @def NFAULT_3_GPIO_Port
+ * @brief GPIO Port corresponding to NFAULT_3 Pin
+ *
+ * @def NSLEEP_3_Pin
+ * @brief GPIO Pin corresponding to NSLEEP_3
+ *
+ * @def NSLEEP_3_GPIO_Port
+ * @brief GPIO Port corresponding to NSLEEP_3 Pin
+ *
+ * @def PH_3_Pin
+ * @brief GPIO Pin corresponding to PH_3
+ *
+ * @def PH_3_GPIO_Port
+ * @brief GPIO Port corresponding to PH_3 Pin
+ *
+ * @def NFAULT_2_Pin
+ * @brief GPIO Pin corresponding to NFAULT_2
+ *
+ * @def NFAULT_2_GPIO_Port
+ * @brief GPIO Port corresponding to NFAULT_2 Pin
+ *
+ * @def NSLEEP_2_Pin
+ * @brief GPIO Pin corresponding to NSLEEP_2
+ *
+ * @def NSLEEP_2_GPIO_Port
+ * @brief GPIO Port corresponding to NSLEEP_2 Pin
+ *
+ * @def PH_2_Pin
+ * @brief GPIO Pin corresponding to PH_2
+ *
+ * @def PH_2_GPIO_Port
+ * @brief GPIO Port corresponding to PH_2 Pin
+ *
+ * @def NFAULT_1_Pin
+ * @brief GPIO Pin corresponding to NFAULT_1
+ *
+ * @def NFAULT_1_GPIO_Port
+ * @brief GPIO Port corresponding to NFAULT_1 Pin
+ *
+ * @def NSLEEP_1_Pin
+ * @brief GPIO Pin corresponding to NSLEEP_1
+ *
+ * @def NSLEEP_1_GPIO_Port
+ * @brief GPIO Port corresponding to NSLEEP_1 Pin
+ *
+ * @def PH_1_Pin
+ * @brief GPIO Pin corresponding to PH_1
+ *
+ * @def PH_1_GPIO_Port
+ * @brief GPIO Port corresponding to PH_1 Pin
+ *
+ * @def NFAULT_5_Pin
+ * @brief GPIO Pin corresponding to NFAULT_5
+ *
+ * @def NFAULT_5_GPIO_Port
+ * @brief GPIO Port corresponding to NFAULT_5 Pin
+ *
+ * @def NSLEEP_5_Pin
+ * @brief GPIO Pin corresponding to NSLEEP_5
+ *
+ * @def NSLEEP_5_GPIO_Port
+ * @brief GPIO Port corresponding to NSLEEP_5 Pin
+ *
+ * @def PH_5_Pin
+ * @brief GPIO Pin corresponding to PH_5
+ *
+ * @def PH_5_GPIO_Port
+ * @brief GPIO Port corresponding to PH_5 Pin
+ *
+ * @def NFAULT_4_Pin
+ * @brief GPIO Pin corresponding to NFAULT_4
+ *
+ * @def NFAULT_4_GPIO_Port
+ * @brief GPIO Port corresponding to NFAULT_4 Pin
+ *
+ * @def NSLEEP_4_Pin
+ * @brief GPIO Pin corresponding to NSLEEP_4
+ *
+ * @def NSLEEP_4_GPIO_Port
+ * @brief GPIO Port corresponding to NSLEEP_4 Pin
+ *
+ * @def PH_4_Pin
+ * @brief GPIO Pin corresponding to PH_4
+ *
+ * @def PH_4_GPIO_Port
+ * @brief GPIO Port corresponding to PH_4 Pin
+ */
+
+/* USER CODE END Header */
+
+/* Define to prevent recursive inclusion -------------------------------------*/
+#ifndef __MAIN_H
+#define __MAIN_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Includes ------------------------------------------------------------------*/
+#include "stm32g4xx_hal.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+
+/* USER CODE END Includes */
+
+/* Exported types ------------------------------------------------------------*/
+/* USER CODE BEGIN ET */
+
+/* USER CODE END ET */
+
+/* Exported constants --------------------------------------------------------*/
+/* USER CODE BEGIN EC */
+
+/* USER CODE END EC */
+
+/* Exported macro ------------------------------------------------------------*/
+/* USER CODE BEGIN EM */
+
+/* USER CODE END EM */
+
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+
+/* Exported functions prototypes ---------------------------------------------*/
+void Error_Handler(void);
+
+/* USER CODE BEGIN EFP */
+
+/* USER CODE END EFP */
+
+/* Private defines -----------------------------------------------------------*/
+#define NFAULT_3_Pin GPIO_PIN_13
+#define NFAULT_3_GPIO_Port GPIOC
+#define NSLEEP_3_Pin GPIO_PIN_14
+#define NSLEEP_3_GPIO_Port GPIOC
+#define PH_3_Pin GPIO_PIN_15
+#define PH_3_GPIO_Port GPIOC
+#define NFAULT_2_Pin GPIO_PIN_5
+#define NFAULT_2_GPIO_Port GPIOC
+#define NSLEEP_2_Pin GPIO_PIN_0
+#define NSLEEP_2_GPIO_Port GPIOB
+#define PH_2_Pin GPIO_PIN_1
+#define PH_2_GPIO_Port GPIOB
+#define NFAULT_1_Pin GPIO_PIN_10
+#define NFAULT_1_GPIO_Port GPIOB
+#define NSLEEP_1_Pin GPIO_PIN_13
+#define NSLEEP_1_GPIO_Port GPIOB
+#define PH_1_Pin GPIO_PIN_15
+#define PH_1_GPIO_Port GPIOB
+#define NFAULT_5_Pin GPIO_PIN_10
+#define NFAULT_5_GPIO_Port GPIOC
+#define NSLEEP_5_Pin GPIO_PIN_11
+#define NSLEEP_5_GPIO_Port GPIOC
+#define PH_5_Pin GPIO_PIN_2
+#define PH_5_GPIO_Port GPIOD
+#define NFAULT_4_Pin GPIO_PIN_4
+#define NFAULT_4_GPIO_Port GPIOB
+#define NSLEEP_4_Pin GPIO_PIN_6
+#define NSLEEP_4_GPIO_Port GPIOB
+#define PH_4_Pin GPIO_PIN_9
+#define PH_4_GPIO_Port GPIOB
+
+/* USER CODE BEGIN Private defines */
+
+/* USER CODE END Private defines */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __MAIN_H */

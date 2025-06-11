@@ -1,0 +1,50 @@
+/*! \mainpage Biomimetic Soft Robotic Hand
+ *
+ * \section intro_sec Introduction
+ *
+ * The goal of this project is to create a soft robotic hand that mechanically
+ * mimics a human hand as closely as possible and can actuate the thumb and 
+ * pointer finger. The pointer finger and thumb will each require 4 motors to 
+ * actuate the 4 tendons per finger and each motor will require its own motor 
+ * driver. To control the fingers each tendon requires position and tension 
+ * control thus each motor will use an encoder and a current sensor and closed
+ *  loop position and impedance control. The user will specify the position of
+ *  the thumb and index finger by selecting from a list of preprogrammed poses.
+ *
+ * \section mech_design Mechanical Design
+ *
+ * The mechanical design for this project was largely completed before ME 507 began,
+ * with the hand itself having already been iterated on many times before the version
+ * used in this project. As such the majority of the mechanical design during ME 507
+ * was focused on the base and spools whcih was iterated on a few times to reach the
+ * final design.
+ *
+ * \image html "Biomimetic Hand Assembly Drawing.png" "Assembly Drawing" width=50%
+ * \image html "prototype-removebg-preview.png" "Completed Prototype" width=50%
+ *
+ * \subsection prints 3D Printed Components
+ * All of the components are 3D printed to allow for rapid prototyping. 
+ * The hand itself is printed out of 85A TPU to facilitate the flexible joints.
+ * The base and motor spools are printed out of standard PLA for easy printing.
+ *
+ * \subsection motor Motors and Tendons
+ *
+ * The tendons for each finger are made of high-strength braided fishing line
+ * strung through channels printed into the hand. These tendons are spooled in and
+ * out by N20 Gear Motors with a 298:1 Gear Ratio and an encoder. These specific 
+ * motors were selected, despite their cost, because there are very small form 
+ * factor with exceptional maximum torque and adequate RPM. Each motor is
+ * individually controlled allowing for multiple motors to be used in tandem to 
+ * mimic the differential tension used to actuate a human hand.
+ *
+ * \section elec_design Electrical Design
+ * 
+ *
+ * \subsection mcu Microcontrollers
+ *
+ * The microcontrollers used for this project are STM32G473RB in the 64 pin QFP
+ * package. These were selected because this project uses a significant number of
+ * peripherals and GPIO and these microcontrollers are configurable for at least 5 
+ * ADC channels, 5 DAC channels, 5 encoder timers, 5 pairs of PWM timers, ST-Link, 
+ * I2C, UART, and GPIO at the same time.
+ */

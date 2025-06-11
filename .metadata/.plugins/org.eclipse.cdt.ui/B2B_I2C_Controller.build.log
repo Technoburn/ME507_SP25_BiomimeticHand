@@ -1,0 +1,21 @@
+19:42:16 **** Incremental Build of configuration Debug for project B2B_I2C_Controller ****
+make -j8 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F411xE -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:114:21: warning: unused variable 'test' [-Wunused-variable]
+  114 |   HAL_StatusTypeDef test = HAL_I2C_Master_Transmit(&hi2c2,(64<<1),(unsigned char*)reply,msg,1000);
+      |                     ^~~~
+arm-none-eabi-gcc -o "B2B_I2C_Controller.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\colin\Desktop\College\CalPoly\2024-2025\SP25\ME 507\Development\B2B_I2C_Controller\STM32F411CEUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="B2B_I2C_Controller.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: B2B_I2C_Controller.elf
+ 
+arm-none-eabi-size  B2B_I2C_Controller.elf 
+arm-none-eabi-objdump -h -S B2B_I2C_Controller.elf  > "B2B_I2C_Controller.list"
+   text	   data	    bss	    dec	    hex	filename
+  25264	     92	   2228	  27584	   6bc0	B2B_I2C_Controller.elf
+Finished building: default.size.stdout
+ 
+Finished building: B2B_I2C_Controller.list
+ 
+
+19:42:18 Build Finished. 0 errors, 1 warnings. (took 1s.693ms)
+

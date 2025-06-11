@@ -1,0 +1,10 @@
+09:22:38 **** Build of configuration Debug for project Minilab_0_Blink_UART ****
+make -j8 all 
+arm-none-eabi-size  Minilab_0_Blink_UART.elf 
+   text	   data	    bss	    dec	    hex	filename
+  10964	     92	   2028	  13084	   331c	Minilab_0_Blink_UART.elf
+Finished building: default.size.stdout
+ 
+
+09:22:39 Build Finished. 0 errors, 0 warnings. (took 509ms)
+

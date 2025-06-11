@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<item key="hasShownOverlayPopupBefore" value="true"/>
+	<item key="replaceBarOpen" value="true"/>
+	<list key="searchhistory">
+		<item value="SystemClock_Config"/>
+		<item value="msg = s"/>
+		<item value="if (command"/>
+		<item value="FLX1_set"/>
+		<item value="FLX2_set"/>
+		<item value="FLX_Set"/>
+		<item value="FLX3_set"/>
+		<item value="_last_pos"/>
+		<item value="_stuck_cnt"/>
+		<item value="INDEX."/>
+		<item value="Msp"/>
+		<item value="HAL_TIM_MspPostInit"/>
+		<item value="TIM Time Base Start"/>
+		<item value="GPIO_PIN_13"/>
+		<item value="_COMPare"/>
+	</list>
+	<list key="replacehistory">
+		<item value="(*msg) = s"/>
+		<item value="(*msg) = "/>
+		<item value="if ((*command)"/>
+		<item value="FLX_set"/>
+		<item value="FLX_Set"/>
+		<item value="last_pos"/>
+		<item value="stuck_cnt"/>
+		<item value="FINGER."/>
+		<item value="B2B_I2C_Peripheral"/>
+	</list>
+</section>

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;B2B_I2C_Peripheral/B2B_I2C_Controller.ioc&apos; to &apos;B2B_I2C_Peripheral.ioc&apos;" description="Rename resource &apos;B2B_I2C_Controller.ioc&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="B2B_I2C_Controller.ioc" name="B2B_I2C_Peripheral.ioc" stamp="1747357763822" updateReferences="true"/>
+</session>
